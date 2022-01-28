@@ -259,7 +259,7 @@ void command::save(const CommandArgs& args) {
 	}
 }
 
-void command::list(const CommandArgs& args) {
+void command::list([[maybe_unused]] const CommandArgs& args) {
 	for (const auto& var : variables) {
 		if (isReservedIdentifier(var.first)) {
 			std::cout << "[Reserved] ";
@@ -269,7 +269,7 @@ void command::list(const CommandArgs& args) {
 	std::cout << std::endl;
 }
 
-void command::savelist(const CommandArgs& args) {
+void command::savelist([[maybe_unused]] const CommandArgs& args) {
 	std::ifstream vars{ "vars.txt" };
 	if (!vars) {
 		std::cerr << "Unexpected error while trying to read save file 'vars.txt' !" << std::endl;
@@ -291,7 +291,6 @@ void command::savelist(const CommandArgs& args) {
 		}
 		std::cout << var.first << " = " << var.second << std::endl;
 	}
-	std::cout << std::endl;
 }
 
 void executeCommand(const std::string& formula) {

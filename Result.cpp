@@ -48,7 +48,7 @@ std::string simplifyOperators(const std::string& formula) {
 	// then remove useless '+'
 	for (std::size_t i{}; i < simplifiedFormula.size() - 1; i++) {
 		if (simplifiedFormula[i] == '+' && (i == 0 || isOpeningDelimiter(simplifiedFormula[i - 1]))) {
-			simplifiedFormula.erase(simplifiedFormula.begin() + i);
+			simplifiedFormula.erase(simplifiedFormula.begin() + static_cast<std::ptrdiff_t>(i));
 			i--;
 		}
 	}
@@ -115,15 +115,24 @@ std::size_t maxPriorityOperatorIndex(const std::vector<std::string>& formula) {
 	};
 
 	const auto maxPriority{
-		operatorPriority((*std::max_element(
-			formula.cbegin(),
-			formula.cend(),
-			[operatorPriority](const std::string& first, const std::string& second) {
-				return operatorPriority(first[0]) < operatorPriority(second[0]);
-			}))[0])
+		operatorPriority(
+			(
+				*std::max_element(
+					formula.cbegin(),
+					formula.cend(),
+					[operatorPriority](const std::string& first, const std::string& second) {
+						return operatorPriority(first[0]) < operatorPriority(second[0]);
+					}
+				)
+			)
+		[0]
+	)};
+
+	const auto findPriority = [=](const std::string& elem) {
+		return operatorPriority(elem[0]) == maxPriority;
 	};
 
-	return std::find_if(formula.cbegin(), formula.cend(), [=](const std::string& elem) {return operatorPriority(elem[0]) == maxPriority; }) - formula.cbegin();
+	return static_cast<std::size_t>(std::find_if(formula.cbegin(), formula.cend(), findPriority) - formula.cbegin());
 }
 
 // adds '*' between delimiters -> e.g "8(2)" => "8*(2)"
@@ -208,7 +217,10 @@ std::optional<long double> result(const std::string& formula) {
 				return std::nullopt;
 			}
 			vector[mostNestedArea.first] = std::to_string(maxPriorityExpressionResult.value());
-			vector.erase(vector.begin() + mostNestedArea.first + 1, vector.begin() + mostNestedArea.second + 1);
+			vector.erase(
+				vector.begin() + static_cast<std::ptrdiff_t>(mostNestedArea.first) + 1,
+				vector.begin() + static_cast<std::ptrdiff_t>(mostNestedArea.second) + 1
+			);
 		}
 
 		// e.g -> "(4*7)" results into "28" at this point
@@ -257,7 +269,7 @@ std::optional<long double> result(const std::string& formula) {
 			break;
 		}
 
-		vector.erase(vector.begin() + operatorIndex, vector.begin() + operatorIndex + 2);
+		vector.erase(vector.begin() + static_cast<std::ptrdiff_t>(operatorIndex), vector.begin() + static_cast<std::ptrdiff_t>(operatorIndex) + 2);
 	}
 
 	return std::stold(vector[0]);

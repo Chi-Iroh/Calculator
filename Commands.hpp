@@ -51,8 +51,8 @@ namespace command {
 	void reset(const CommandArgs& args);
 	void load(const CommandArgs& args);
 	void save(const CommandArgs& args);
-	void list(const CommandArgs& args);
-	void savelist(const CommandArgs& args);
+	void list([[maybe_unused]] const CommandArgs& args);
+	void savelist([[maybe_unused]] const CommandArgs& args);
 }
 
 void executeCommand(const std::string& formula);

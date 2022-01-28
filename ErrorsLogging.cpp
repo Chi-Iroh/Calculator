@@ -109,5 +109,4 @@ void logError(Error error, SyntaxErrorIndexes indexes, const std::string& formul
 		break;
 	}
 	highlightErrorIndexes(indexes, formula);
-	std::clog << std::endl;
 }
