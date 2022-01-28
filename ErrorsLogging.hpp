@@ -7,6 +7,8 @@ using SyntaxErrorIndexes = std::vector<std::size_t>;
 void highlightErrorIndexes(SyntaxErrorIndexes indexes, const std::string& formula);
 
 enum class Error {
+
+	// Expression parsing
 	UnrecognizedCharacters,
 	UnmatchedDelimiters,
 	MultipleOperators,
@@ -15,8 +17,15 @@ enum class Error {
 	CommasOutsideNumber,
 	MultipleCommas,
 
-	IncorrectVariableName,
-	IncorrectVariableValue,
+	// "set" command
+	BadVariableName,
+	MissingVariableName,
+
+	// "reset" and "load" commands
+	NonExistingVariable,
+	NoSaveFile,
+
+	UnexpectedArgument,
 
 	Max
 };

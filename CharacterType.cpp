@@ -7,7 +7,12 @@ bool isOperator(const std::string& c) {
 }
 
 bool areAllCharactersSpaces(const std::string& formula) {
-	return std::find_if(formula.cbegin(), formula.cend(), [](char c) {return !std::isspace(c); }) == formula.cend();
+	return std::find_if(
+		formula.cbegin(), formula.cend(), 
+		[](char c) {
+			return !(c > -1 && c <= 255) || !std::isspace(c); // std::isspace throws a runtime error if c isn't in [0 ; 255]
+		}
+	) == formula.cend();
 }
 
 std::string longestSequenceOfAlphaCharacters(const std::string& string, std::size_t beginIndex) {

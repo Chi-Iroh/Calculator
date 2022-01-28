@@ -5,7 +5,7 @@
 
 #include "SyntaxChecking.hpp"
 #include "ErrorsLogging.hpp"
-#include "Variables.hpp"
+#include "Commands.hpp"
 
 std::optional<syntax::SyntaxErrorIndexes> syntax::multipleOperators(const std::string& formula) {
 	SyntaxErrorIndexes indexes{};
@@ -96,7 +96,11 @@ std::optional<syntax::SyntaxErrorIndexes> syntax::unrecognizedCharacters(const s
 
 	for (std::size_t i{}; i < formula.size(); i++) {
 
-		if (std::isalpha(formula[i]) || formula[i] == '_') {
+		if (formula[i] < 0 || formula[i] > 255) {
+			unrecognizedCharacters.push_back(i);
+		}
+
+		else if (std::isalpha(formula[i]) || formula[i] == '_') {
 			const auto identifier{ longestSequenceOfAlphaCharacters(formula, i) };
 			if (variables.find(identifier) != variables.cend()) {
 				i += identifier.size() - 1;
@@ -104,7 +108,7 @@ std::optional<syntax::SyntaxErrorIndexes> syntax::unrecognizedCharacters(const s
 			}
 		}
 
-		if (!isDigit(formula[i]) && !isDelimiter(formula[i]) && formula[i] != '.' && !isOperator(formula[i]) && !std::isspace(formula[i])) {
+		else if (!isDigit(formula[i]) && !isDelimiter(formula[i]) && formula[i] != '.' && !isOperator(formula[i]) && !std::isspace(formula[i])) {
 			unrecognizedCharacters.push_back(i);
 		}
 	}
@@ -148,7 +152,7 @@ std::optional<syntax::SyntaxErrorIndexes> syntax::aloneOperators(const std::stri
 		return indexes;
 	}
 
-	// checks if there's an alone operator in parenthesises, e.g -> "(+)" ; "(8*")
+	// checks if there's an alone operator in parenthesises, e.g -> "(+)" ; "(8*)"
 	for (std::size_t i{ 1 }; i < formula.size() - 1; i++) {
 		if (isOperator(formula[i]) && (isOpeningDelimiter(formula[i - 1]) || isClosingDelimiter(formula[i + 1]))) {
 			indexes.push_back(i);

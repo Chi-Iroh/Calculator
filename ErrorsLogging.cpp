@@ -1,6 +1,7 @@
 #include "ErrorsLogging.hpp"
-#include "Variables.hpp"
+#include "Commands.hpp"
 #include <iostream>
+#include <sstream>
 
 void highlightErrorIndexes(SyntaxErrorIndexes indexes, const std::string& formula) {
 	std::clog << formula << std::endl;
@@ -26,6 +27,21 @@ void logError(Error error, SyntaxErrorIndexes indexes, const std::string& formul
 			std::cerr << pluralSuffix;
 		}
 		std::cerr << messageEnd << " !" << std::endl;
+	};
+
+	const auto unexpectedArgumentDetails = [indexes]() {
+		std::ostringstream sstream{};
+		for (std::size_t i{}; i < indexes.size(); i++) {
+			sstream << indexes[i];
+			if (i < indexes.size() - 1) {
+				sstream << ", ";
+			}
+		}
+		return sstream.str();
+	};
+
+	const auto argIndexToFormulaIndex = [formula](std::size_t argIndex) {
+		return formula.find(getArgs(formula)[argIndex]);
 	};
 
 	switch (error) {
@@ -67,13 +83,23 @@ void logError(Error error, SyntaxErrorIndexes indexes, const std::string& formul
 		writeErrorMessage("Unrecognized character");
 		break;
 
-	case Error::IncorrectVariableName:
-		writeErrorMessage("Incorrect variable name : " + extractVarName(formula));
+	case Error::BadVariableName:
+		writeErrorMessage("Incorrect variable name : " + getArgs(formula)[1]);
+		indexes[0] = argIndexToFormulaIndex(indexes[0]);
 		break;
 
-	// assumes that there's a value
-	case Error::IncorrectVariableValue:
-		writeErrorMessage("Incorrect variable value : " + extractVarValue(formula).value());
+	case Error::MissingVariableName:
+		writeErrorMessage("Missing variable name");
+		break;
+
+	case Error::UnexpectedArgument:
+		writeErrorMessage("Unexpected argument", "s", unexpectedArgumentDetails());
+		break;
+
+	case Error::NoSaveFile:
+		writeErrorMessage("No save file found ('vars.txt'), cannot load variables");
+		break;
+
 	}
 	highlightErrorIndexes(indexes, formula);
 	std::clog << std::endl;
