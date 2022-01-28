@@ -189,6 +189,26 @@ std::optional<syntax::SyntaxErrorIndexes> syntax::emptyDelimiters(const std::str
 	return indexes;
 }
 
+std::optional<SyntaxErrorIndexes> syntax::unknownIdentifiers(const std::string& formula) {
+	SyntaxErrorIndexes errors{};
+
+	for (std::size_t i{}; i < formula.size(); i++) {
+
+		if (std::isalpha(formula[i]) || formula[i] == '_') {
+			const auto identifier{ longestSequenceOfAlphaCharacters(formula, i) }; // it is an existing variable because syntax was checked
+			if (variables.find(identifier) == variables.cend()) {
+				errors.push_back(i);
+			}
+			i += identifier.size() - 1;
+		}
+	}
+
+	if (errors.empty()) {
+		return std::nullopt;
+	}
+	return errors;
+}
+
 bool isSyntaxCorrect(const std::string& formula) {
 	if (formula.empty() || areAllCharactersSpaces(formula)) {
 		return true;
@@ -196,6 +216,7 @@ bool isSyntaxCorrect(const std::string& formula) {
 
 	return
 		!syntax::unrecognizedCharacters(formula).has_value()	&&
+		!syntax::unknownIdentifiers(formula).has_value()		&&
 		!syntax::unmatchedDelimiters(formula).has_value()		&&
 		!syntax::multipleOperators(formula).has_value()			&&
 		!syntax::emptyDelimiters(formula).has_value()			&&
@@ -209,6 +230,7 @@ void checkSyntax(const std::string& formula) {
 
 	const std::array<functionType, nErrors> errors{
 		syntax::unrecognizedCharacters,
+		syntax::unknownIdentifiers,
 		syntax::unmatchedDelimiters,
 		syntax::multipleOperators,
 		syntax::emptyDelimiters,

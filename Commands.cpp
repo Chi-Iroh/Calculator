@@ -16,37 +16,23 @@ std::map<std::string, long double> variables{
 };
 
 bool isCommand(const std::string& formula) {
-	return std::find_if(commands.cbegin(), commands.cend(), [formula](const auto& command) {return formula.starts_with(command); }) != commands.cend();
-}
-
-/*std::optional<SyntaxErrorDetails> checkVariableAssignment(const std::string& formula) {
-	std::istringstream sstream{ formula };
-
-	std::string elem{};
-	sstream >> elem;
-
-	sstream >> elem;
-	SyntaxErrorIndexes indexes{};
-	for (std::size_t i{};  char c : elem) {
-		if (!std::isalpha(c) && c != '_') {
-			indexes.push_back(i);
+	for (const auto& command : commands) {
+		if (formula.size() == command.size()) {
+			if (formula == command) {
+				return true;
+			}
+			continue;
 		}
-		i++;
+
+		// checks if the character right after the command is a space
+		if (formula.starts_with(command)) {
+			if (std::isspace(formula[command.size()])) {
+				return true;
+			}
+		}
 	}
-
-	if (!indexes.empty()) {
-		return SyntaxErrorDetails{ Error::BadVariableName, indexes };
-	}
-
-	const auto copyElem{ elem };
-	std::getline(sstream, elem); // if we're at the end of the sstream buffer, then elem isn't changed
-
-	if (elem != copyElem && !isSyntaxCorrect(elem)) {
-		return SyntaxErrorDetails{ Error::BadVariableValue, {} }; // indexes aren't important here, because the syntax will be checked later
-	}
-
-	return std::nullopt;
-}*/
+	return false;
+}
 
 // assumes formula is a well-formed command
 CommandArgs getArgs(const std::string& formula) {
@@ -98,7 +84,8 @@ bool hasCommandTheRightNumberOfArgs(const std::string& formula) {
 }
 
 bool isReservedIdentifier(const std::string& identifier) {
-	return std::find(reservedIdentifiers.cbegin(), reservedIdentifiers.cend(), identifier) != reservedIdentifiers.cend();
+	return std::find(commands.cbegin(), commands.cend(), identifier) != commands.cend() ||
+		std::find(reservedIdentifiers.cbegin(), reservedIdentifiers.cend(), identifier) != reservedIdentifiers.cend();
 }
 
 bool isValidVariableName(const std::string& identifier) {
@@ -131,7 +118,7 @@ std::optional<SyntaxErrorDetails> checkArguments(const std::string& formula) {
 		if (errors.empty()) {
 			return std::nullopt;
 		}
-		return SyntaxErrorDetails{ Error::NonExistingVariable, errors };
+		return SyntaxErrorDetails{ Error::UnknownIndentifier, errors };
 	}
 
 	if (args[0] == "set") {
@@ -191,15 +178,14 @@ void command::set(const CommandArgs& args) {
 
 void command::reset(const CommandArgs& args) {
 	if (args.size() == 1) {
-		for (auto& var : variables) {
-			if (!isReservedIdentifier(var.first)) {
-				var.second = 0.L;
-			}
-		}
+		variables = {
+			{"e", std::numbers::e_v<long double>},
+			{"pi", std::numbers::pi_v<long double>}
+		};
 	}
 	else {
 		for (std::size_t i{ 1 }; i < args.size(); i++) {
-			variables[args[i]] = 0.L;
+			variables.erase(args[i]);
 		}
 	}
 }
@@ -213,9 +199,15 @@ void command::load(const CommandArgs& args) {
 
 	std::pair<std::string, long double> var{};
 	std::vector<std::string> varsLoaded{};
+	std::string previousVarName{};
 
-	while (!vars.eof()) {
+	while (true) {
 		vars >> var.first >> var.second;
+		if (previousVarName == var.first) { // input didn't change "var"'s value, end of file reached
+			break;
+		}
+		previousVarName = var.first;
+
 		if (!isReservedIdentifier(var.first)) {
 			if (args.size() == 1) { // loads all
 				variables[var.first] = var.second;
@@ -235,7 +227,7 @@ void command::load(const CommandArgs& args) {
 	if (args.size() > 1 && varsLoaded.size() != (args.size() - 1)) { // if there are less read variables than given in the args
 		for (std::size_t i{ 1 }; i < args.size(); i++) {
 			if (std::find(varsLoaded.cbegin(), varsLoaded.cend(), args[i]) == varsLoaded.cend()) { // var in the args weren't in save file
-				std::clog << "[Waring] : Variable \"" << args[i] << "\" isn't saved in file 'vars.txt', its value remains the same." << std::endl;
+				std::clog << "[Warning] : Variable \"" << args[i] << "\" isn't saved in file 'vars.txt', its value remains the same." << std::endl;
 			}
 		}
 	}
@@ -250,13 +242,20 @@ void command::save(const CommandArgs& args) {
 
 	if (args.size() == 1) { // saves all
 		for (const auto& var : variables) {
-			vars << var.first << ' ' << var.second << std::endl;
+			if (!isReservedIdentifier(var.first)) {
+				vars << var.first << ' ' << var.second << std::endl;
+			}
 		}
 		return;
 	}
 
 	for (std::size_t i{ 1 }; i < args.size(); i++) {
-		vars << args[i] << ' ' << variables.at(args[i]) << std::endl;
+		if (!isReservedIdentifier(args[i])) {
+			vars << args[i] << ' ' << variables.at(args[i]) << std::endl;
+		}
+		else {
+			std::clog << "[Warning] \"" << args[i] << "\" is a constant and wasn't saved into 'vars.txt'" << std::endl;
+		}
 	}
 }
 
@@ -267,6 +266,7 @@ void command::list(const CommandArgs& args) {
 		}
 		std::cout << var.first << " = " << var.second << std::endl;
 	}
+	std::cout << std::endl;
 }
 
 void command::savelist(const CommandArgs& args) {
@@ -277,14 +277,21 @@ void command::savelist(const CommandArgs& args) {
 	}
 
 	std::pair<std::string, long double> var{};
+	std::string previousVarName{};
 
-	while (!vars.eof()) {
+	while (true) {
 		vars >> var.first >> var.second;
+		if (previousVarName == var.first) { // input didn't change "var"'s value, end of file reached
+			break;
+		}
+		previousVarName = var.first;
+
 		if (isReservedIdentifier(var.first)) {
 			std::cout << "[Reserved] ";
 		}
 		std::cout << var.first << " = " << var.second << std::endl;
 	}
+	std::cout << std::endl;
 }
 
 void executeCommand(const std::string& formula) {
@@ -300,7 +307,7 @@ void executeCommand(const std::string& formula) {
 	};
 
 	for (const auto& command : commandsMap) {
-		if (formula.starts_with(command.first)) {
+		if (getArgs(formula)[0] == command.first) {
 			command.second(getArgs(formula));
 			break;
 		}

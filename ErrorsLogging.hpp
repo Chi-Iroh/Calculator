@@ -10,6 +10,7 @@ enum class Error {
 
 	// Expression parsing
 	UnrecognizedCharacters,
+	UnknownIndentifier,
 	UnmatchedDelimiters,
 	MultipleOperators,
 	EmptyDelimiters,
@@ -17,14 +18,9 @@ enum class Error {
 	CommasOutsideNumber,
 	MultipleCommas,
 
-	// "set" command
 	BadVariableName,
 	MissingVariableName,
-
-	// "reset" and "load" commands
-	NonExistingVariable,
 	NoSaveFile,
-
 	UnexpectedArgument,
 
 	Max

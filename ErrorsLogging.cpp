@@ -41,7 +41,8 @@ void logError(Error error, SyntaxErrorIndexes indexes, const std::string& formul
 	};
 
 	const auto argIndexToFormulaIndex = [formula](std::size_t argIndex) {
-		return formula.find(getArgs(formula)[argIndex]);
+		return 1 + formula.substr(1).find(getArgs(formula)[argIndex]);
+		// begins the search at index 1, so that there isn't confusion => e.g : "set set 50" -> avoid returning '0'
 	};
 
 	switch (error) {
@@ -100,6 +101,12 @@ void logError(Error error, SyntaxErrorIndexes indexes, const std::string& formul
 		writeErrorMessage("No save file found ('vars.txt'), cannot load variables");
 		break;
 
+	case Error::UnknownIndentifier:
+		writeErrorMessage("Unknown identifier");
+		for (auto& i : indexes) {
+			i = argIndexToFormulaIndex(i);
+		}
+		break;
 	}
 	highlightErrorIndexes(indexes, formula);
 	std::clog << std::endl;

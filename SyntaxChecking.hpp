@@ -23,6 +23,8 @@ namespace syntax {
 	std::optional<SyntaxErrorIndexes> aloneOperators(const std::string& formula);
 
 	std::optional<SyntaxErrorIndexes> emptyDelimiters(const std::string& formula);
+
+	std::optional<SyntaxErrorIndexes> unknownIdentifiers(const std::string& formula);
 }
 
 bool isSyntaxCorrect(const std::string& formula);
