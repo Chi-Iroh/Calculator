@@ -18,7 +18,7 @@ std::size_t maxPriorityOperatorIndex(const std::vector<std::string>& formula);
 
 // adds '*' between delimiters -> e.g "8(2)" => "8*(2)"
 // assumes syntax was previsouly checked
-std::string addMultiplyOperatorBetweenDelimiters(const std::string& formula);
+std::string addImplicitMultiplyOperators(const std::string& formula);
 
 std::string removeSpaces(const std::string& formula);
 

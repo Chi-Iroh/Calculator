@@ -96,11 +96,7 @@ std::optional<syntax::SyntaxErrorIndexes> syntax::unrecognizedCharacters(const s
 
 	for (std::size_t i{}; i < formula.size(); i++) {
 
-		if (formula[i] < 0 || formula[i] > 255) {
-			unrecognizedCharacters.push_back(i);
-		}
-
-		else if (std::isalpha(formula[i]) || formula[i] == '_') {
+		if (std::isalpha(formula[i]) || formula[i] == '_') {
 			const auto identifier{ longestSequenceOfAlphaCharacters(formula, i) };
 			if (variables.find(identifier) != variables.cend()) {
 				i += identifier.size() - 1;

@@ -6,6 +6,8 @@
 #include <optional>
 #include <variant>
 
+void help();
+
 enum class Error; // defined in ErrorLogging.hpp
 using SyntaxErrorIndexes = std::vector<std::size_t>;
 

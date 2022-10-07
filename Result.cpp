@@ -2,6 +2,7 @@
 #include "Commands.hpp"
 #include <algorithm>
 #include <iostream>
+#include <cmath>
 
 std::vector<std::string> splitFormula(const std::string& formula) {
 	std::vector<std::string> split{};
@@ -114,34 +115,25 @@ std::size_t maxPriorityOperatorIndex(const std::vector<std::string>& formula) {
 		// but '12' wil also result into a priority of 0 and then the index of 12 will be returned
 	};
 
-	const auto maxPriority{
-		operatorPriority(
-			(
-				*std::max_element(
-					formula.cbegin(),
-					formula.cend(),
-					[operatorPriority](const std::string& first, const std::string& second) {
-						return operatorPriority(first[0]) < operatorPriority(second[0]);
-					}
-				)
-			)
-		[0]
-	)};
+	const auto sortPriority = [operatorPriority](const std::string& first, const std::string& second) {
+		return operatorPriority(first[0]) < operatorPriority(second[0]);
+	};
 
-	const auto findPriority = [=](const std::string& elem) {
+	const auto maxPriorityOperatorStr{ *std::max_element(formula.cbegin(), formula.cend(), sortPriority) };
+
+	const auto maxPriority{ operatorPriority(maxPriorityOperatorStr[0])};
+
+	const auto findPriority = [operatorPriority, maxPriority](const std::string& elem) {
 		return operatorPriority(elem[0]) == maxPriority;
 	};
 
 	return static_cast<std::size_t>(std::find_if(formula.cbegin(), formula.cend(), findPriority) - formula.cbegin());
 }
 
-// adds '*' between delimiters -> e.g "8(2)" => "8*(2)"
+// adds implicit '*' before and/or after delimiters -> e.g "8(2)" => "8*(2)" ; "(8)2" => "(8)*2"
+// adds implicit '*' before and/or after variables -> e.g "4e" => "4*e" ; "pi3" => "pi*3"
 // assumes syntax was previsouly checked and spaces were removes
-std::string addMultiplyOperatorBetweenDelimiters(const std::string& formula) {
-	if (formula.size() < 4) { // there cannot be valid delimiters
-		return formula;
-	}
-
+std::string addImplicitMultiplyOperators(const std::string& formula) {
 	std::string copy{ formula };
 
 	for (std::size_t i{ 1 }; i <= copy.size() - 1; i++) {
@@ -150,6 +142,13 @@ std::string addMultiplyOperatorBetweenDelimiters(const std::string& formula) {
 			copy.insert(i++, "*");
 		}
 		else if (isClosingDelimiter(copy[i - 1]) && !isClosingDelimiter(copy[i]) && !isOperator(copy[i])) {
+			copy.insert(i++, "*");
+		}
+
+		else if ((std::isdigit(copy[i - 1]) || copy[i - 1] == '.') && (std::isalpha(copy[i]) || copy[i] == '_')) {
+			copy.insert(i++, "*");
+		}
+		else if ((std::isalpha(copy[i - 1]) || copy[i - 1] == '_') && (std::isdigit(copy[i]) || copy[i] == '.')) {
 			copy.insert(i++, "*");
 		}
 	}
@@ -191,9 +190,9 @@ std::optional<long double> result(const std::string& formula) {
 	auto vector{
 		splitFormula(
 			simplifyOperators(
-				addMultiplyOperatorBetweenDelimiters(
-					removeSpaces(
-						replaceVariables(formula)
+				replaceVariables(
+					addImplicitMultiplyOperators(
+						removeSpaces(formula)
 					)
 				)
 			)
@@ -228,8 +227,25 @@ std::optional<long double> result(const std::string& formula) {
 			break;
 		}
 
+		const auto makeIntegerIfPossible = [](std::string& elem) {
+			const bool hasComma{ elem.find('.') != std::string::npos };
+			if (hasComma) {
+				for (size_t i = elem.size() - 1; i > 0; i--) {
+					if (elem[i] == '0') {
+						elem.pop_back();
+					}
+					else if (elem[i] == '.') {
+						elem.pop_back();
+						break;
+					}
+				}
+			}
+		};
+
 		// computes simple operations, assuming no parenthesises and angle brackets remain
 		const auto operatorIndex{ maxPriorityOperatorIndex(vector) };
+		makeIntegerIfPossible(vector[operatorIndex - 1]);
+		makeIntegerIfPossible(vector[operatorIndex + 1]);
 		auto& firstOperand{ vector[operatorIndex - 1] };
 		auto& secondOperand{ vector[operatorIndex + 1] };
 
@@ -259,6 +275,10 @@ std::optional<long double> result(const std::string& formula) {
 		case '%':
 			if (!isInteger(firstOperand) || !isInteger(secondOperand)) {
 				std::cerr << "A modulo with non-integer values occured !" << std::endl;
+				return std::nullopt;
+			}
+			if (std::stoll(secondOperand) == 0) {
+				std::cerr << "A modulo with a zero right-operand occured !" << std::endl;
 				return std::nullopt;
 			}
 			firstOperand = std::to_string(std::stoll(firstOperand) % std::stoll(secondOperand));

@@ -10,6 +10,64 @@
 #include <filesystem>
 #include <iostream>
 
+void help() {
+	const auto waitInput = [] {
+		std::cout << "--- Next ---";
+		std::getchar();
+		std::cout << "\x1b[2K"; // deletes current line (the "--- Next ---' msg)
+		std::cout << "\x1b[1A"; // moves to the beginning of the line
+		std::cout << "\x1b[2K"; // deletes current line
+	};
+
+	constexpr std::array<std::string_view, 39> helpMsg{
+
+	"'help' displays this menu",
+	"'quit' exits the app\n",
+	"Supported features :",
+		"\t- Operators +-*/%^",
+		"\t\tNote : % only accepts two integer operands => '5 % 2' is valid whereas '1.2 % 5' and '8 % 3.6' aren't",
+		"\t\tNote : / and % only accepts a non-zero right operand => '0 / 4' and '3 % 7' are valid whereas '1 / 0' and '2 % 0' aren't\n",
+		"\t- Parethesises () and square brackets []",
+		"\t\tNote : you can mix them => '(1 + 1) * [2 + 2]' is valid",
+		"\t\tNote : implicit multiplications are supported",
+		"\t\tExample : '3(4)', '(4)[5]', and '(5)7' are respectively evaluated as '3*(4)', '(4)*[5]' and '(5)*7'\n",
+		"\t- Mathematical constants pi and e",
+		"\t\tNote : implicit multiplications are supported",
+		"\t\tExample : '3pi' and 'e4' are respectively evaluated as '3*pi' and 'e*4'\n",
+		"\t- Commands : 'set', 'reset', 'save', 'load', 'list', 'savelist'\n",
+		"\t- Variables creation/modification :",
+		"\t\t-> 'set <name> [<value>]' creates (or modifies, if exists at the call) the <name> variable",
+		"\t\tNote : if <value> isn't specified, <name> is set to 0",
+		"\t\tNote : <name> must be compound of only letters (a-z and/or A-Z) and underscores (_)",
+		"\t\tNote : variables may be more than 1 character long, so implicit product of two variables isn't supported :",
+		"\t\t\tExample : let a, b and ab three variables, then inputting 'ab' is ambiguous because it may refer to the 'ab' variable or the implicit product 'a*b'",
+		"\t\tNote : <name> mustn't be a command or a constant identifier",
+		"\t\tExample : 'set A 20' and 'set B' are valid whereas 'set save' and 'set pi 12' aren't\n",
+		"\t- Variables deletion :",
+		"\t\t-> 'reset [<varlist>]' removes <varlist>",
+		"\t\tNote : if <varlist> isn't specified, all variables (except constants) are removed",
+		"\t\tNote : if <varlist> contains at least one non-existing identifier, a warning will be displayed but the process continues if there are other variables",
+		"\t\tExample : 'reset r' and 'reset' are valid whereas 'reset 1' isn't and 'reset pi e' will raise a warning\n",
+		"\t- Saving variables :",
+		"\t\t-> 'save [<varlist>]' copies <varlist> into a save file ('vars.txt')",
+		"\t\tNote : if <varlist> isn't specified, all variables (except constants) are saved",
+		"\t\tExample : if 'a' is set before, then 'save a' is valid, otherwise not\n",
+		"\t- Loading variables :",
+		"\t\t-> 'load [<varlist>]' reads <varlist> from 'vars.txt' and overwrites corresponding variables",
+		"\t\tNote : if <varlist> contains at least one variable which isn't saved, then a warning is emitted for each one",
+		"\t\tNote : a warning is emitted for each variable encountered in 'vars.txt' but not requested in <varlist>\n",
+		"\t- Listing existing variables :",
+		"\t\t-> 'list' displays all the existing variables\n",
+		"\t- Listing saved variables :",
+		"\t\t-> 'savelist' displays all saved variables\n",
+	};
+
+	for (const auto& helpLine : helpMsg) {
+		std::cout << helpLine << std::endl;
+		waitInput();
+	}
+}
+
 std::map<std::string, long double> variables{
 	{"e", std::numbers::e_v<long double>},
 	{"pi", std::numbers::pi_v<long double>}

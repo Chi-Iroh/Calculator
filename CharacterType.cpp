@@ -10,7 +10,7 @@ bool areAllCharactersSpaces(const std::string& formula) {
 	return std::find_if(
 		formula.cbegin(), formula.cend(), 
 		[](char c) {
-			return !(c > -1 && c <= 255) || !std::isspace(c); // std::isspace throws a runtime error if c isn't in [0 ; 255]
+			return !std::isspace(c);
 		}
 	) == formula.cend();
 }

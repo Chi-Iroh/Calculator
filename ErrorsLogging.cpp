@@ -107,6 +107,9 @@ void logError(Error error, SyntaxErrorIndexes indexes, const std::string& formul
 			i = argIndexToFormulaIndex(i);
 		}
 		break;
+
+	case Error::Max:
+		break;
 	}
 	highlightErrorIndexes(indexes, formula);
 }
